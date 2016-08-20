@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "366455109935",
+    "firebase_url": "https://ninjasworlds.firebaseio.com",
+    "project_id": "ninjasworlds",
+    "storage_bucket": "ninjasworlds.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:366455109935:android:d03f58156f67c457",
+        "android_client_info": {
+          "package_name": "pl.marchuck.ninjaworlds"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "366455109935-topukr27rjh83tapq0bhuurg0i4e0ghm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAViK-7euc8WTwTQ4yJK9Xuk4jUgygJOdI"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
