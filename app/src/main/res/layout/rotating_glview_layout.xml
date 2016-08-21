@@ -9,6 +9,10 @@
         android:id="@+id/rotatingGLView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        custom:speedY="0.03" />
+        custom:mtlPath="cat/cat.mtl"
+        custom:objPath="cat/cat.obj"
+        custom:scale="31"
+        custom:speedY="0.03"
+        custom:texturePath="cat/cat_diff.png" />
 
 </RelativeLayout>

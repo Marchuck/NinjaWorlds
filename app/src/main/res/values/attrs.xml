@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="RotatingGLView">
+        <attr name="scale" format="float" />
         <attr name="speedX" format="float" />
         <attr name="speedY" format="float" />
         <attr name="speedZ" format="float" />
         <attr name="rotationX" format="float" />
         <attr name="rotationY" format="float" />
         <attr name="rotationZ" format="float" />
+        <attr name="objPath" format="string" />
+        <attr name="mtlPath" format="string" />
+        <attr name="texturePath" format="string" />
+
     </declare-styleable>
 
 </resources>

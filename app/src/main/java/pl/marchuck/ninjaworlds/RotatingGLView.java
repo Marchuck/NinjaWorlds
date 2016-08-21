@@ -50,6 +50,8 @@ public class RotatingGLView extends GLSurfaceView {
     public static final String TAG = RotatingGLView.class.getSimpleName();
     public float speedX, speedY, speedZ;
     public float rotationX, rotationY, rotationZ;
+    public String objPath = "cat/cat.obj", texturePath = "cat/cat_diff.png", mtlPath = "cat/cat.mtl";
+    public float scale = 1f;
     private CompositeSubscription subscriptions = new CompositeSubscription();
     private AtomicBoolean nowIsSwitching = new AtomicBoolean(false);
     private boolean isGL20;
@@ -72,12 +74,15 @@ public class RotatingGLView extends GLSurfaceView {
         super(context, attrs);
         TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.RotatingGLView, 0, 0);
         try {
-            speedX = a.getFloat(R.styleable.RotatingGLView_speedX, 0);
+            scale = a.getFloat(R.styleable.RotatingGLView_scale, 1f);
             speedY = a.getFloat(R.styleable.RotatingGLView_speedY, 0);
             speedZ = a.getFloat(R.styleable.RotatingGLView_speedZ, 0);
             rotationX = a.getFloat(R.styleable.RotatingGLView_rotationX, 0);
             rotationY = a.getFloat(R.styleable.RotatingGLView_rotationY, 0);
             rotationZ = a.getFloat(R.styleable.RotatingGLView_rotationZ, 0);
+            objPath = a.getString(R.styleable.RotatingGLView_objPath);
+            mtlPath = a.getString(R.styleable.RotatingGLView_mtlPath);
+            texturePath = a.getString(R.styleable.RotatingGLView_texturePath);
         } finally {
             a.recycle();
         }
@@ -119,6 +124,35 @@ public class RotatingGLView extends GLSurfaceView {
         final ActivityManager activityManager = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
         final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
         return configurationInfo.reqGlEsVersion >= 0x20000;
+    }
+
+    private rx.Observable<Object3D> loadModel() {
+        return Observable.fromAsync(new Action1<AsyncEmitter<Object3D>>() {
+            @Override
+            public void call(AsyncEmitter<Object3D> object3DAsyncEmitter) {
+
+                AssetManager assetManager = getContext().getAssets();
+                Object3D out;
+                Object3D[] outs;
+
+                try {
+                    outs = Loader.loadOBJ(assetManager.open(objPath),
+                            assetManager.open(mtlPath), scale);
+                    Log.i(TAG, "LOADED " + outs.length + " LAYERS");
+                    outs[0].setTexture(texturePath);
+
+                    outs[0].build();
+                    out = Object3D.mergeAll(outs);
+                    out.build();
+                    out.strip();
+                } catch (IOException e) {
+                    object3DAsyncEmitter.onError(e);
+                    return;
+                }
+                object3DAsyncEmitter.onNext(out);
+                object3DAsyncEmitter.onCompleted();
+            }
+        }, AsyncEmitter.BackpressureMode.LATEST);
     }
 
     public RotatingGLView setModelsLoader(@Nullable ModelsLoader modelsLoader) {
@@ -250,7 +284,8 @@ public class RotatingGLView extends GLSurfaceView {
             Resources res = ctx.getResources();
             rx.Subscription subscription =
                     Observable.zip(weakHelper.initWorld(res),
-                            load3dModel(weakHelper.getContext(), 20f, "cat", "cat/cat_diff.png"),
+                            weakHelper.loadModel(),
+                            //load3dModel(weakHelper.getContext(), 20f, "cat", "cat/cat_diff.png"),
                             new Func2<World, Object3D, World>() {
                                 @Override
                                 public World call(World world, Object3D object3D) {

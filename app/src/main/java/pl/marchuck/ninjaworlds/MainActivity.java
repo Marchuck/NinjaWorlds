@@ -12,7 +12,7 @@ import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ViewById;
 
 
-@EActivity(R.layout.kurde_layout)
+@EActivity(R.layout.rotating_glview_layout)
 public class MainActivity extends AppCompatActivity implements RotatingGLView.ModelsLoader {
     public static final String TAG = MainActivity.class.getSimpleName();
 
