@@ -40,7 +40,6 @@ import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 
@@ -51,6 +50,7 @@ import rx.schedulers.Schedulers;
  */
 public class OpenGLHelper implements View.OnClickListener, Changeable {
     public static final String TAG = OpenGLHelper.class.getSimpleName();
+    private final WeakReference<OpenGLProxy> openGLProxyRef;
     private boolean isGL20;
     private boolean isAdded;
     private boolean doOnceJobWithCamera;
@@ -63,6 +63,19 @@ public class OpenGLHelper implements View.OnClickListener, Changeable {
     private ProgressIndicator progressIndicator;
     private MyRenderer renderer;
 
+    public OpenGLHelper(@NonNull final OpenGLProxy openGLProxy) {
+        this.openGLProxyRef = new WeakReference<>(openGLProxy);
+        isGL20 = isGLES2_0(openGLProxy.getBaseContext());
+
+        // GLSurfaceView gles = openGLProxy.getSurfaceView();
+        openGLProxy.getSurfaceView().setEGLContextClientVersion(2);
+
+        openGLProxy.getSurfaceView().setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+        openGLProxy.getSurfaceView().getHolder().setFormat(PixelFormat.TRANSLUCENT);
+        openGLProxy.getSurfaceView().setZOrderOnTop(true);
+        renderer = new MyRenderer(this);
+        openGLProxy.getSurfaceView().setRenderer(renderer);
+    }
 
     private static boolean isGLES2_0(Context ctx) {
         final ActivityManager activityManager = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
@@ -87,12 +100,6 @@ public class OpenGLHelper implements View.OnClickListener, Changeable {
     @Override
     public int getLastChange() {
         return renderer.swipingResult;
-    }
-
-    public interface ProgressIndicator {
-        void showProgressBar();
-
-        void hideProgressBar();
     }
 
     @Override
@@ -126,198 +133,40 @@ public class OpenGLHelper implements View.OnClickListener, Changeable {
         this.progressIndicator = indicator;
     }
 
-
     private void switchModel(String s, float f) {
         Log.d(TAG, "switchModel: ");
-        if (world == null || nowIsSwitching.get()) return;
-        nowIsSwitching.set(true);
-        if (progressIndicator != null) progressIndicator.showProgressBar();
-        //loadModel(s + ".obj", s + ".mtl", f / 2)
-        RenderingImpl.loadCompletePokemon("haunter", 1f, openGLProxyRef.get().getBaseContext())
-                .map(new Func1<Object3D, World>() {
-                    @Override
-                    public World call(Object3D object3D) {
-                        return addObjectToWorld(world, object3D);
-                    }
-                }).subscribeOn(Schedulers.computation()).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<World>() {
-                    @Override
-                    public void onCompleted() {
-                        nowIsSwitching.set(false);
-                        if (progressIndicator != null) progressIndicator.hideProgressBar();
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        Log.e(TAG, "onError: ", e);
-                    }
-
-                    @Override
-                    public void onNext(World world) {
-                        Log.d(TAG, "onNext: ");
-                    }
-                });
+//        if (world == null || nowIsSwitching.get()) return;
+//        nowIsSwitching.set(true);
+//        if (progressIndicator != null) progressIndicator.showProgressBar();
+//        //loadModel(s + ".obj", s + ".mtl", f / 2)
+//        BitmapUtils.loadModel"haunter", 1f, openGLProxyRef.get().getBaseContext())
+//                .map(new Func1<Object3D, World>() {
+//                    @Override
+//                    public World call(Object3D object3D) {
+//                        return addObjectToWorld(world, object3D);
+//                    }
+//                }).subscribeOn(Schedulers.computation()).observeOn(AndroidSchedulers.mainThread())
+//                .subscribe(new Subscriber<World>() {
+//                    @Override
+//                    public void onCompleted() {
+//                        nowIsSwitching.set(false);
+//                        if (progressIndicator != null) progressIndicator.hideProgressBar();
+//                    }
+//
+//                    @Override
+//                    public void onError(Throwable e) {
+//                        Log.e(TAG, "onError: ", e);
+//                    }
+//
+//                    @Override
+//                    public void onNext(World world) {
+//                        Log.d(TAG, "onNext: ");
+//                    }
+//                });
     }
 
     public boolean onTouchEvent(MotionEvent me) {
         return renderer.onTouchEvent(me);
-    }
-
-    private static class MyRenderer implements GLSurfaceView.Renderer {
-        final WeakReference<OpenGLHelper> helperWeakReference;
-
-        private float xpos, ypos, touchTurn, touchTurnUp;
-
-        private RGBColor back = new RGBColor(13, 88, 110, 0);
-        private int fps;
-        private long time;
-        private FrameBuffer frameBuffer;
-        private int swipingResult;
-
-        public MyRenderer(OpenGLHelper helper) {
-            helperWeakReference = new WeakReference<>(helper);
-        }
-
-        @Override
-        public void onSurfaceCreated(GL10 gl, EGLConfig eglConfig) {
-            Log.e(TAG, "onSurfaceCreated: ");
-            gl.glDisable(GL10.GL_DITHER);
-            gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT,
-                    GL10.GL_FASTEST);
-
-            gl.glClearColor(0, 0, 0, 0);
-            gl.glEnable(GL10.GL_CULL_FACE);
-            gl.glShadeModel(GL10.GL_SMOOTH);
-            gl.glEnable(GL10.GL_DEPTH_TEST);
-        }
-
-        @Override
-        public void onSurfaceChanged(GL10 gl10, int w, int h) {
-            Log.e(TAG, "onSurfaceChanged: ");
-            final OpenGLHelper weakHelper = helperWeakReference.get();
-            if (weakHelper == null || weakHelper.nowIsSwitching.get()) return;
-
-            if (frameBuffer != null) {
-                frameBuffer.dispose();
-            }
-
-            if (weakHelper.isGL20) {
-                frameBuffer = new FrameBuffer(w, h); // OpenGL ES 2.0 constructor
-            } else {
-                frameBuffer = new FrameBuffer(gl10, w, h); // OpenGL ES 1.x constructor
-            }
-            if (weakHelper.world == null) {
-                Observable.zip(weakHelper.initWorld(),
-
-//                        weakHelper.loadModel("haunter.obj", "pikachu.mtl", 6f)
-                        new RenderingImpl(App.ctx).loadModel(),
-                        new Func2<World, Object3D, World>() {
-                            @Override
-                            public World call(World world, Object3D object3D) {
-                                weakHelper.currentModel = object3D;
-                                weakHelper.leftModel = object3D;
-                                weakHelper.rightModel = object3D;
-                                return weakHelper.addObjectToWorld(world, object3D);
-                            }
-                        }).subscribeOn(Schedulers.computation())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new Subscriber<World>() {
-                            @Override
-                            public void onCompleted() {
-                                Log.d(TAG, "onCompleted: ");
-                            }
-
-                            @Override
-                            public void onError(Throwable e) {
-                                Log.e(TAG, "onError: ", e);
-                            }
-
-                            @Override
-                            public void onNext(World world) {
-                                Log.d(TAG, "onNext: world");
-                            }
-                        });
-            }
-        }
-
-        private boolean isNotReady(@Nullable OpenGLHelper weakHelper) {
-            return weakHelper == null || weakHelper.currentModel == null || weakHelper.nowIsSwitching.get();
-        }
-
-        @Override
-        public void onDrawFrame(GL10 gl10) {
-            Log.e(TAG, "onDrawFrame: " );
-            OpenGLHelper weakHelper = helperWeakReference.get();
-            if (isNotReady(weakHelper)) return;
-            World world = weakHelper.world;
-            if (touchTurn != 0) {
-                weakHelper.currentModel.rotateY(touchTurn);
-                // cube[1].rotateY(touchTurn);
-                touchTurn = 0;
-            }
-
-            if (touchTurnUp != 0) {
-                weakHelper.currentModel.rotateX(touchTurnUp);
-                // cube[1].rotateX(touchTurnUp);
-                touchTurnUp = 0;
-            }
-
-            if (frameBuffer != null) {
-                frameBuffer.clear(back);
-                if (world != null) {
-                    world.renderScene(frameBuffer);
-                    world.draw(frameBuffer);
-                }
-                frameBuffer.display();
-            }
-            if (!weakHelper.nowIsSwitching.get() && weakHelper.currentModel != null) {
-                weakHelper.currentModel.rotateY(.03f);
-                //  weakHelper.currentModel.
-            }
-            if (System.currentTimeMillis() - time >= 1000) {
-                Logger.log(fps + "fps");
-                fps = 0;
-                time = System.currentTimeMillis();
-            }
-            fps++;
-        }
-
-        public boolean onTouchEvent(MotionEvent me) {
-
-            if (me.getAction() == MotionEvent.ACTION_DOWN) {
-                xpos = me.getX();
-                ypos = me.getY();
-                return true;
-            }
-
-            if (me.getAction() == MotionEvent.ACTION_UP) {
-                xpos = -1;
-                ypos = -1;
-                touchTurn = 0;
-                touchTurnUp = 0;
-                return true;
-            }
-
-            if (me.getAction() == MotionEvent.ACTION_MOVE) {
-                float xd = me.getX() - xpos;
-                float yd = me.getY() - ypos;
-
-                xpos = me.getX();
-                ypos = me.getY();
-
-                touchTurn = xd / -100f;
-                touchTurnUp = yd / -100f;
-                return true;
-            }
-
-            try {
-                Thread.sleep(30);
-            } catch (Exception e) {
-                // No need for this...
-            }
-
-            return false;
-        }
     }
 
     public Observable<World> initWorld() {
@@ -441,19 +290,165 @@ public class OpenGLHelper implements View.OnClickListener, Changeable {
         }, AsyncEmitter.BackpressureMode.LATEST);
     }
 
-    private final WeakReference<OpenGLProxy> openGLProxyRef;
+    public interface ProgressIndicator {
+        void showProgressBar();
 
-    public OpenGLHelper(@NonNull final OpenGLProxy openGLProxy) {
-        this.openGLProxyRef = new WeakReference<>(openGLProxy);
-        isGL20 = isGLES2_0(openGLProxy.getBaseContext());
+        void hideProgressBar();
+    }
 
-        // GLSurfaceView gles = openGLProxy.getSurfaceView();
-        openGLProxy.getSurfaceView().setEGLContextClientVersion(2);
+    private static class MyRenderer implements GLSurfaceView.Renderer {
+        final WeakReference<OpenGLHelper> helperWeakReference;
 
-        openGLProxy.getSurfaceView().setEGLConfigChooser(8, 8, 8, 8, 16, 0);
-        openGLProxy.getSurfaceView().getHolder().setFormat(PixelFormat.TRANSLUCENT);
-        openGLProxy.getSurfaceView().setZOrderOnTop(true);
-        renderer = new MyRenderer(this);
-        openGLProxy.getSurfaceView().setRenderer(renderer);
+        private float xpos, ypos, touchTurn, touchTurnUp;
+
+        private RGBColor back = new RGBColor(13, 88, 110, 0);
+        private int fps;
+        private long time;
+        private FrameBuffer frameBuffer;
+        private int swipingResult;
+
+        public MyRenderer(OpenGLHelper helper) {
+            helperWeakReference = new WeakReference<>(helper);
+        }
+
+        @Override
+        public void onSurfaceCreated(GL10 gl, EGLConfig eglConfig) {
+            Log.e(TAG, "onSurfaceCreated: ");
+            gl.glDisable(GL10.GL_DITHER);
+            gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT,
+                    GL10.GL_FASTEST);
+
+            gl.glClearColor(0, 0, 0, 0);
+            gl.glEnable(GL10.GL_CULL_FACE);
+            gl.glShadeModel(GL10.GL_SMOOTH);
+            gl.glEnable(GL10.GL_DEPTH_TEST);
+        }
+
+        @Override
+        public void onSurfaceChanged(GL10 gl10, int w, int h) {
+            Log.e(TAG, "onSurfaceChanged: ");
+            final OpenGLHelper weakHelper = helperWeakReference.get();
+            if (weakHelper == null || weakHelper.nowIsSwitching.get()) return;
+
+            if (frameBuffer != null) {
+                frameBuffer.dispose();
+            }
+
+            if (weakHelper.isGL20) {
+                frameBuffer = new FrameBuffer(w, h); // OpenGL ES 2.0 constructor
+            } else {
+                frameBuffer = new FrameBuffer(gl10, w, h); // OpenGL ES 1.x constructor
+            }
+            if (weakHelper.world == null) {
+                Observable.zip(weakHelper.initWorld(),
+//                        weakHelper.loadModel("haunter.obj", "pikachu.mtl", 6f)
+                        null,
+                        new Func2<World, Object3D, World>() {
+                            @Override
+                            public World call(World world, Object3D object3D) {
+                                weakHelper.currentModel = object3D;
+                                weakHelper.leftModel = object3D;
+                                weakHelper.rightModel = object3D;
+                                return weakHelper.addObjectToWorld(world, object3D);
+                            }
+                        }).subscribeOn(Schedulers.computation())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Subscriber<World>() {
+                            @Override
+                            public void onCompleted() {
+                                Log.d(TAG, "onCompleted: ");
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                Log.e(TAG, "onError: ", e);
+                            }
+
+                            @Override
+                            public void onNext(World world) {
+                                Log.d(TAG, "onNext: world");
+                            }
+                        });
+            }
+        }
+
+        private boolean isNotReady(@Nullable OpenGLHelper weakHelper) {
+            return weakHelper == null || weakHelper.currentModel == null || weakHelper.nowIsSwitching.get();
+        }
+
+        @Override
+        public void onDrawFrame(GL10 gl10) {
+            Log.e(TAG, "onDrawFrame: ");
+            OpenGLHelper weakHelper = helperWeakReference.get();
+            if (isNotReady(weakHelper)) return;
+            World world = weakHelper.world;
+            if (touchTurn != 0) {
+                weakHelper.currentModel.rotateY(touchTurn);
+                // cube[1].rotateY(touchTurn);
+                touchTurn = 0;
+            }
+
+            if (touchTurnUp != 0) {
+                weakHelper.currentModel.rotateX(touchTurnUp);
+                // cube[1].rotateX(touchTurnUp);
+                touchTurnUp = 0;
+            }
+
+            if (frameBuffer != null) {
+                frameBuffer.clear(back);
+                if (world != null) {
+                    world.renderScene(frameBuffer);
+                    world.draw(frameBuffer);
+                }
+                frameBuffer.display();
+            }
+            if (!weakHelper.nowIsSwitching.get() && weakHelper.currentModel != null) {
+                weakHelper.currentModel.rotateY(.03f);
+                //  weakHelper.currentModel.
+            }
+            if (System.currentTimeMillis() - time >= 1000) {
+                Logger.log(fps + "fps");
+                fps = 0;
+                time = System.currentTimeMillis();
+            }
+            fps++;
+        }
+
+        public boolean onTouchEvent(MotionEvent me) {
+
+            if (me.getAction() == MotionEvent.ACTION_DOWN) {
+                xpos = me.getX();
+                ypos = me.getY();
+                return true;
+            }
+
+            if (me.getAction() == MotionEvent.ACTION_UP) {
+                xpos = -1;
+                ypos = -1;
+                touchTurn = 0;
+                touchTurnUp = 0;
+                return true;
+            }
+
+            if (me.getAction() == MotionEvent.ACTION_MOVE) {
+                float xd = me.getX() - xpos;
+                float yd = me.getY() - ypos;
+
+                xpos = me.getX();
+                ypos = me.getY();
+
+                touchTurn = xd / -100f;
+                touchTurnUp = yd / -100f;
+                return true;
+            }
+
+            try {
+                Thread.sleep(30);
+            } catch (Exception e) {
+                // No need for this...
+            }
+
+            return false;
+        }
     }
 }

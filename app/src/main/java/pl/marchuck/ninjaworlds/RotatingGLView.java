@@ -1,0 +1,392 @@
+package pl.marchuck.ninjaworlds;
+
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.pm.ConfigurationInfo;
+import android.content.res.AssetManager;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
+import android.graphics.PixelFormat;
+import android.opengl.GLSurfaceView;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
+
+import com.threed.jpct.Camera;
+import com.threed.jpct.FrameBuffer;
+import com.threed.jpct.Light;
+import com.threed.jpct.Loader;
+import com.threed.jpct.Logger;
+import com.threed.jpct.Object3D;
+import com.threed.jpct.RGBColor;
+import com.threed.jpct.SimpleVector;
+import com.threed.jpct.TextureManager;
+import com.threed.jpct.World;
+import com.threed.jpct.util.MemoryHelper;
+
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
+import rx.AsyncEmitter;
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
+import rx.functions.Func2;
+import rx.schedulers.Schedulers;
+import rx.subscriptions.CompositeSubscription;
+
+/**
+ * @author Lukasz Marczak
+ * @since 08.08.16.
+ */
+public class RotatingGLView extends GLSurfaceView {
+    public static final String TAG = RotatingGLView.class.getSimpleName();
+    public float speedX, speedY, speedZ;
+    public float rotationX, rotationY, rotationZ;
+    private CompositeSubscription subscriptions = new CompositeSubscription();
+    private AtomicBoolean nowIsSwitching = new AtomicBoolean(false);
+    private boolean isGL20;
+    private boolean isAdded;
+    private Object3D currentModel;
+    private World world;
+    private Light sun;
+    private MyRenderer renderer;
+    @Nullable
+    private ProgressIndicator progressIndicator;
+    @Nullable
+    private ModelsLoader modelsLoader;
+
+    public RotatingGLView(Context context) {
+        super(context);
+        init(context);
+    }
+
+    public RotatingGLView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.RotatingGLView, 0, 0);
+        try {
+            speedX = a.getFloat(R.styleable.RotatingGLView_speedX, 0);
+            speedY = a.getFloat(R.styleable.RotatingGLView_speedY, 0);
+            speedZ = a.getFloat(R.styleable.RotatingGLView_speedZ, 0);
+            rotationX = a.getFloat(R.styleable.RotatingGLView_rotationX, 0);
+            rotationY = a.getFloat(R.styleable.RotatingGLView_rotationY, 0);
+            rotationZ = a.getFloat(R.styleable.RotatingGLView_rotationZ, 0);
+        } finally {
+            a.recycle();
+        }
+        init(context);
+    }
+
+    private static rx.Observable<Object3D> load3dModel(final Context context, final float scale,
+                                                       final String name, final String texture) {
+        return Observable.fromAsync(new Action1<AsyncEmitter<Object3D>>() {
+            @Override
+            public void call(AsyncEmitter<Object3D> object3DAsyncEmitter) {
+                AssetManager assetManager = context.getAssets();
+                String folderPath = name + "/";
+
+                Object3D out;
+                Object3D[] outs;
+
+                try {
+                    outs = Loader.loadOBJ(assetManager.open(folderPath + name + ".obj"),
+                            assetManager.open(folderPath + name + ".mtl"), scale);
+                    Log.i(TAG, "LOADED " + outs.length + " LAYERS");
+                    outs[0].setTexture(texture);
+
+                    outs[0].build();
+                    out = Object3D.mergeAll(outs);
+                    out.build();
+                    out.strip();
+                } catch (IOException e) {
+                    object3DAsyncEmitter.onError(e);
+                    return;
+                }
+                object3DAsyncEmitter.onNext(out);
+                object3DAsyncEmitter.onCompleted();
+            }
+        }, AsyncEmitter.BackpressureMode.LATEST);
+    }
+
+    private static boolean isGLES2_0(Context ctx) {
+        final ActivityManager activityManager = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
+        final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
+        return configurationInfo.reqGlEsVersion >= 0x20000;
+    }
+
+    public RotatingGLView setModelsLoader(@Nullable ModelsLoader modelsLoader) {
+        this.modelsLoader = modelsLoader;
+        return this;
+    }
+
+    public RotatingGLView setProgressIndicator(@Nullable ProgressIndicator indicator) {
+        this.progressIndicator = indicator;
+        return this;
+    }
+
+    private void init(Context context) {
+        isGL20 = isGLES2_0(context);
+        setEGLContextClientVersion(2);
+        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+        getHolder().setFormat(PixelFormat.TRANSLUCENT);
+        setZOrderOnTop(true);
+        renderer = new MyRenderer(this);
+        setRenderer(renderer);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent me) {
+        return renderer.onTouchEvent(me);
+    }
+
+    public Observable<World> initWorld(final Resources res) {
+        return Observable.fromAsync(new Action1<AsyncEmitter<World>>() {
+            @Override
+            public void call(AsyncEmitter<World> worldAsyncEmitter) {
+                if (res == null) {
+                    worldAsyncEmitter.onError(new Throwable("Nullable Resources reference"));
+                    return;
+                }
+                world = new World();
+                world.setAmbientLight(20, 20, 20);
+                if (modelsLoader != null) modelsLoader.loadTextures(TextureManager.getInstance());
+                worldAsyncEmitter.onNext(world);
+                worldAsyncEmitter.onCompleted();
+            }
+        }, AsyncEmitter.BackpressureMode.DROP);
+    }
+
+    public World addObjectToWorld(@NonNull final World world, @NonNull final Object3D object3D) {
+        if (currentModel != null && isAdded) {
+            world.removeAllObjects();
+            isAdded = false;
+            currentModel = null;
+        }
+        currentModel = object3D;
+        isAdded = true;
+        currentModel.rotateX((float) Math.PI);
+
+        Camera cam = world.getCamera();
+
+        cam.moveCamera(Camera.CAMERA_MOVEOUT, 50);
+        if (sun == null) sun = new Light(world);
+        sun.setIntensity(250, 250, 250);
+        SimpleVector modelVector = currentModel.getTransformedCenter();
+        cam.lookAt(modelVector);
+        SimpleVector sv = new SimpleVector(modelVector);
+        sv.y = -200;
+        sv.z = -200;
+        sun.setPosition(sv);
+
+        MemoryHelper.compact();
+        world.addObject(currentModel);
+        return world;
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        Log.d(TAG, "onDetachedFromWindow: ");
+        onDestroy();
+        super.onDetachedFromWindow();
+    }
+
+    private void onDestroy() {
+        //avoid leaks!
+        MemoryHelper.compact();
+        subscriptions.unsubscribe();
+    }
+
+    public interface ModelsLoader {
+        void loadTextures(TextureManager textureManager);
+//        void swapModel(@NonNull Object3D replacement);
+    }
+
+    public interface ProgressIndicator {
+        void showProgressBar();
+
+        void hideProgressBar();
+    }
+
+    private static class MyRenderer implements GLSurfaceView.Renderer {
+        final WeakReference<RotatingGLView> helperWeakReference;
+        private float xpos, ypos, touchTurn, touchTurnUp;
+        private RGBColor back = new RGBColor(13, 88, 110, 0);
+        private int fps;
+        private long time;
+        private FrameBuffer frameBuffer;
+        private int deg;
+        private int timex;
+
+        private MyRenderer(RotatingGLView helper) {
+            helperWeakReference = new WeakReference<>(helper);
+        }
+
+        @Override
+        public void onSurfaceCreated(GL10 gl, EGLConfig eglConfig) {
+            Log.e(TAG, "onSurfaceCreated: ");
+
+            gl.glDisable(GL10.GL_DITHER);
+            gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT,
+                    GL10.GL_FASTEST);
+            gl.glClearColor(0, 0, 0, 0);
+            gl.glEnable(GL10.GL_CULL_FACE);
+            gl.glShadeModel(GL10.GL_SMOOTH);
+            gl.glEnable(GL10.GL_DEPTH_TEST);
+            final RotatingGLView weakHelper = helperWeakReference.get();
+            if (weakHelper == null) {
+                Log.e(TAG, "onSurfaceCreated: Nullable weakHelper");
+                return;
+            }
+            if (weakHelper.progressIndicator != null)
+                weakHelper.progressIndicator.showProgressBar();
+            Context ctx = weakHelper.getContext();
+            Resources res = ctx.getResources();
+            rx.Subscription subscription =
+                    Observable.zip(weakHelper.initWorld(res),
+                            load3dModel(weakHelper.getContext(), 20f, "cat", "cat/cat_diff.png"),
+                            new Func2<World, Object3D, World>() {
+                                @Override
+                                public World call(World world, Object3D object3D) {
+                                    // weakHelper.leftModel = object3D;
+                                    weakHelper.currentModel = object3D;
+                                    // weakHelper.rightModel = object3D;
+                                    return weakHelper.addObjectToWorld(world, object3D);
+                                }
+                            }).subscribeOn(Schedulers.computation())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(new Subscriber<World>() {
+                                @Override
+                                public void onCompleted() {
+                                    Log.d(TAG, "onCompleted: ");
+                                }
+
+                                @Override
+                                public void onError(Throwable e) {
+                                    Log.e(TAG, "onError: ", e);
+                                }
+
+                                @Override
+                                public void onNext(World world) {
+                                    Log.d(TAG, "onNext: world");
+                                    if (weakHelper.currentModel == null) {
+                                        onError(new Throwable("Nullable model"));
+                                        return;
+                                    }
+                                    weakHelper.currentModel.rotateX(weakHelper.rotationX);
+                                    weakHelper.currentModel.rotateY(weakHelper.rotationY);
+                                    weakHelper.currentModel.rotateZ(weakHelper.rotationZ);
+                                    if (weakHelper.progressIndicator != null)
+                                        weakHelper.progressIndicator.hideProgressBar();
+                                }
+                            });
+            weakHelper.subscriptions.add(subscription);
+        }
+
+        @Override
+        public void onSurfaceChanged(GL10 gl10, int w, int h) {
+            Log.e(TAG, "onSurfaceChanged: ");
+            final RotatingGLView weakHelper = helperWeakReference.get();
+            if (weakHelper == null || weakHelper.nowIsSwitching.get()) return;
+
+            if (frameBuffer != null) {
+                frameBuffer.dispose();
+            }
+
+            if (weakHelper.isGL20) {
+                frameBuffer = new FrameBuffer(w, h); // OpenGL ES 2.0 constructor
+            } else {
+                frameBuffer = new FrameBuffer(gl10, w, h); // OpenGL ES 1.x constructor
+            }
+        }
+
+        private boolean isNotReady(@Nullable RotatingGLView weakHelper) {
+            return weakHelper == null || weakHelper.currentModel == null || weakHelper.nowIsSwitching.get();
+        }
+
+        @Override
+        public void onDrawFrame(GL10 gl10) {
+            Log.e(TAG, "onDrawFrame: ");
+            RotatingGLView weakRef = helperWeakReference.get();
+            if (isNotReady(weakRef)) return;
+            World world = weakRef.world;
+            if (touchTurn != 0) {
+                weakRef.currentModel.rotateY(touchTurn);
+                touchTurn = 0;
+            }
+
+            if (touchTurnUp != 0) {
+                weakRef.currentModel.rotateX(touchTurnUp);
+                touchTurnUp = 0;
+            }
+
+            if (frameBuffer != null) {
+                frameBuffer.clear(back);
+                if (world != null) {
+                    world.renderScene(frameBuffer);
+                    world.draw(frameBuffer);
+                }
+                frameBuffer.display();
+            }
+            if (!weakRef.nowIsSwitching.get() && weakRef.currentModel != null) {
+                weakRef.currentModel.rotateX(weakRef.speedX);
+                weakRef.currentModel.rotateY(weakRef.speedY);
+                weakRef.currentModel.rotateZ(weakRef.speedZ);
+                if (timex == 2) {
+                    timex = 0;
+                    deg = (deg + 1) % (360);
+                    weakRef.sun.setPosition(SimpleVector.create(0,
+                            (float) (200 * Math.sin(Math.toRadians(deg))),
+                            (float) (200 * Math.cos(Math.toRadians(deg)))));
+                }
+                timex++;
+            }
+            if (System.currentTimeMillis() - time >= 1000) {
+                Logger.log(fps + "fps");
+                fps = 0;
+                time = System.currentTimeMillis();
+            }
+            fps++;
+        }
+
+        public boolean onTouchEvent(MotionEvent me) {
+
+            if (me.getAction() == MotionEvent.ACTION_DOWN) {
+                xpos = me.getX();
+                ypos = me.getY();
+                return true;
+            }
+
+            if (me.getAction() == MotionEvent.ACTION_UP) {
+                xpos = -1;
+                ypos = -1;
+                touchTurn = 0;
+                touchTurnUp = 0;
+                return true;
+            }
+
+            if (me.getAction() == MotionEvent.ACTION_MOVE) {
+                float xd = me.getX() - xpos;
+                float yd = me.getY() - ypos;
+
+                xpos = me.getX();
+                ypos = me.getY();
+
+                touchTurn = xd / -100f;
+                touchTurnUp = yd / -100f;
+                return true;
+            }
+            try {
+                Thread.sleep(30);
+            } catch (Exception ignored) {
+            }
+            return false;
+        }
+    }
+}
