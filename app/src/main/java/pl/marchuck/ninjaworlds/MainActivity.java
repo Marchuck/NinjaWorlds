@@ -1,9 +1,9 @@
 package pl.marchuck.ninjaworlds;
 
-import android.content.Context;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.RelativeLayout;
 
 import com.threed.jpct.TextureManager;
 
@@ -19,16 +19,19 @@ public class MainActivity extends AppCompatActivity implements RotatingGLView.Mo
 
     @ViewById(R.id.rotatingGLView)
     RotatingGLView rotatingGLView;
+    @ViewById(R.id.rootView)
+    RelativeLayout rootView;
 
     @AfterViews
     void aacscs() {
         Log.d(TAG, "aacscs: ");
 
-        rotatingGLView.setModelsLoader(this);
+        rotatingGLView.setModelsLoader(null);
         //  addFragment(new GlEsFragment_());
 
 
     }
+
     void addFragment(Fragment fragment) {
         Log.d(TAG, "addFragment: ");
         getSupportFragmentManager()
@@ -39,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements RotatingGLView.Mo
 
     @Override
     public void loadTextures(TextureManager textureManager) {
-        Context ctx = getApplicationContext();
-        BitmapUtils.loadTextures(ctx);
+        // Context ctx = getApplicationContext();
+        //  BitmapUtils.loadTextures(ctx);
     }
 }

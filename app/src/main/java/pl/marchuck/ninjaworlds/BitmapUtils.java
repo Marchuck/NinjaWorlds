@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.PorterDuff;
 import android.util.Log;
 
 import com.threed.jpct.Texture;
@@ -15,6 +16,7 @@ import java.io.InputStream;
 import rx.AsyncEmitter;
 import rx.Observable;
 import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
@@ -26,8 +28,18 @@ public class BitmapUtils {
 
     public static final String TAG = BitmapUtils.class.getSimpleName();
 
+    public static rx.Subscription loadTextures(Context ctx, Subscriber<Boolean> sub) {
+        return loadTexturesAsync(ctx, new String[]{"haunter/ghost_dh.png",
+                        /* "haunter/ghost_eye_dh.png", "cat/cat_diff.png" */
+        }).subscribeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(sub);
+    }
+
     public static rx.Subscription loadTextures(Context context) {
-        return loadTexturesAsync(context)
+        return loadTexturesAsync(context, new String[]{"haunter/ghost_dh.png",
+                        /* "haunter/ghost_eye_dh.png", "cat/cat_diff.png" */
+        })
                 .subscribeOn(Schedulers.computation())
                 .subscribe(new Subscriber<Boolean>() {
                     @Override
@@ -47,27 +59,35 @@ public class BitmapUtils {
                 });
     }
 
-    private static boolean loadNextTextureByPowersOf2(Context ctx, TextureManager tm, String path) {
+
+    private static boolean loadNextTexture(Context ctx, TextureManager tm, String path) {
         if (ctx == null || path == null) return false;
         Bitmap catBmp = getBitmapFromAsset(ctx, path);
         if (catBmp == null) return false;
-        Texture catTexture = new Texture(catBmp);//bmp is already powered by 512x1024
-        tm.addTexture("cat/cat_diff.png", catTexture);
+        Texture catTexture;
+        if (isBitmapFaulty(catBmp)) {
+            catTexture = new Texture(createFitBitmap(catBmp));
+        } else {
+            catTexture = new Texture(catBmp);//bmp is already powered by 512x1024
+        }
+        tm.addTexture(path, catTexture);
         return true;
     }
 
-    private static rx.Observable<Boolean> loadTexturesAsync(final Context ctx) {
+    public static rx.Observable<Boolean> loadTexturesAsync(final Context ctx, final String[] tex) {
+        Log.d(TAG, "loadTexturesAsync: ");
         return Observable.fromAsync(new Action1<AsyncEmitter<Boolean>>() {
             @Override
             public void call(AsyncEmitter<Boolean> booleanAsyncEmitter) {
 
                 TextureManager tm = TextureManager.getInstance();
 
-                String[] tex = new String[]{"cat/cat_diff.png"};
                 boolean result = true;
                 int i = 0;
                 for (; i < tex.length && result; i++) {
-                    result = loadNextTextureByPowersOf2(ctx, tm, tex[i]);
+                    Log.d(TAG, "loading " + tex[i]);
+                    result = loadNextTexture(ctx, tm, tex[i]);
+
                 }
                 if (!result) {
                     //something wrong happened, one or more textures are broken
@@ -86,7 +106,7 @@ public class BitmapUtils {
                 booleanAsyncEmitter.onNext(true);
                 booleanAsyncEmitter.onCompleted();
             }
-        }, AsyncEmitter.BackpressureMode.DROP);
+        }, AsyncEmitter.BackpressureMode.LATEST);
     }
 
     public static Bitmap getBitmapFromAsset(Context context, String filePath) {
@@ -103,4 +123,40 @@ public class BitmapUtils {
         return bitmap;
     }
 
+    private static boolean isNotPowerOf2(int d) {
+        return d != 1 && d != 2 && d != 4 && d != 8 && d != 16 && d != 32 && d != 64 && d != 128
+                && d != 256 && d != 512 && d != 1024 && d != 2048 && d != 4096 && d != 8192;
+    }
+
+    public static boolean isBitmapFaulty(Bitmap bmp) {
+        int w = bmp.getWidth();
+        int h = bmp.getHeight();
+        boolean faulty = false;
+        if (isNotPowerOf2(w) && isNotPowerOf2(h)) {
+            faulty = true;
+        }
+        return faulty;
+    }
+
+    private static Bitmap createTransparent(int width, int height) {
+
+        int[] ints = new int[width * height];
+        for (int i = 0; i < ints.length; i++) {
+            ints[i] = 0xff000000;
+        }
+        return Bitmap.createBitmap(ints, width, height, Bitmap.Config.ARGB_8888);
+    }
+
+    public static Bitmap createFitBitmap(Bitmap bmp) {
+        Log.d(TAG, "createFitBitmap: ");
+        int fixedWidth = 1;
+        int fixedHeight = 1;
+        int inputWidth = bmp.getWidth();
+        int inputHeight = bmp.getHeight();
+        while (fixedHeight < inputHeight) fixedHeight *= 2;
+        while (fixedWidth < inputWidth) fixedWidth *= 2;
+        Log.d(TAG, "createFitBitmap: " + fixedWidth + " x " + fixedHeight);
+        return BitmapTransform.createBitmap(createTransparent(fixedWidth, fixedHeight), bmp,
+                PorterDuff.Mode.ADD, false, true);
+    }
 }

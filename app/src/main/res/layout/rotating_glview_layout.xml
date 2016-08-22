@@ -5,14 +5,24 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!--<pl.marchuck.ninjaworlds.RotatingGLView-->
+    <!--android:id="@+id/rotatingGLView"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="match_parent"-->
+    <!--custom:mtlPath="cat/cat.mtl"-->
+    <!--custom:objPath="cat/cat.obj"-->
+    <!--custom:scale="31"-->
+    <!--custom:speedY="0.03"-->
+    <!--custom:texturePath="cat/cat_diff.png" /> -->
     <pl.marchuck.ninjaworlds.RotatingGLView
         android:id="@+id/rotatingGLView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        custom:mtlPath="cat/cat.mtl"
-        custom:objPath="cat/cat.obj"
-        custom:scale="31"
+        android:background="@android:color/holo_blue_dark"
+        custom:mtlPath="haunter/haunter.mtl"
+        custom:objPath="haunter/haunter.obj"
+        custom:scale="1"
         custom:speedY="0.03"
-        custom:texturePath="cat/cat_diff.png" />
+        custom:texturePath="haunter/ghost_dh.png" />
 
 </RelativeLayout>
