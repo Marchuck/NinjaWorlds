@@ -5,31 +5,33 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.RelativeLayout;
 
-import com.threed.jpct.TextureManager;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
 
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ViewById;
 
 
-@EActivity(R.layout.rotating_glview_layout)
-public class MainActivity extends AppCompatActivity implements RotatingGLView.ModelsLoader {
+@EActivity(R.layout.activity_main)
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, RotatingGLView.OnGLReadyCallback {
     public static final String TAG = MainActivity.class.getSimpleName();
 
+//    @ViewById(R.id.rotatingGLView)
+//    RotatingGLView rotatingGLView;
 
-    @ViewById(R.id.rotatingGLView)
-    RotatingGLView rotatingGLView;
     @ViewById(R.id.rootView)
     RelativeLayout rootView;
+
+    RotatingGLView glView;
 
     @AfterViews
     void aacscs() {
         Log.d(TAG, "aacscs: ");
-
-        rotatingGLView.setModelsLoader(null);
-        //  addFragment(new GlEsFragment_());
-
-
+        SupportMapFragment su = new SupportMapFragment();
+        su.getMapAsync(this);
+        addFragment(su);
     }
 
     void addFragment(Fragment fragment) {
@@ -41,8 +43,14 @@ public class MainActivity extends AppCompatActivity implements RotatingGLView.Mo
     }
 
     @Override
-    public void loadTextures(TextureManager textureManager) {
-        // Context ctx = getApplicationContext();
-        //  BitmapUtils.loadTextures(ctx);
+    public void onMapReady(GoogleMap googleMap) {
+        glView = new RotatingGLView(this);
+        glView.getOnGLReady(this);
+        rootView.addView(glView);
+    }
+
+    @Override
+    public void onGLViewReady() {
+        addFragment(new ButtonsFragment_());
     }
 }

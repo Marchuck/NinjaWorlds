@@ -22,7 +22,6 @@ import com.threed.jpct.Logger;
 import com.threed.jpct.Object3D;
 import com.threed.jpct.RGBColor;
 import com.threed.jpct.SimpleVector;
-import com.threed.jpct.TextureManager;
 import com.threed.jpct.World;
 import com.threed.jpct.util.MemoryHelper;
 
@@ -49,10 +48,10 @@ import rx.subscriptions.CompositeSubscription;
  */
 public class RotatingGLView extends GLSurfaceView {
     public static final String TAG = RotatingGLView.class.getSimpleName();
-    public float speedX, speedY, speedZ;
+    public float speedX, speedY = 0.03f, speedZ;
     public float rotationX, rotationY, rotationZ;
     public String objPath = "cat/cat.obj", texturePath = "cat/cat_diff.png", mtlPath = "cat/cat.mtl";
-    public float scale = 1f;
+    public float scale = 31f;
     private CompositeSubscription subscriptions = new CompositeSubscription();
     private AtomicBoolean nowIsSwitching = new AtomicBoolean(false);
     private boolean isGL20;
@@ -64,8 +63,7 @@ public class RotatingGLView extends GLSurfaceView {
     private MyRenderer renderer;
     @Nullable
     private ProgressIndicator progressIndicator;
-    @Nullable
-    private ModelsLoader modelsLoader;
+    private OnGLReadyCallback onGlReadyCallback;
 
     public RotatingGLView(Context context) {
         super(context);
@@ -138,12 +136,6 @@ public class RotatingGLView extends GLSurfaceView {
         }, AsyncEmitter.BackpressureMode.LATEST);
     }
 
-    public RotatingGLView setModelsLoader(@Nullable ModelsLoader modelsLoader) {
-        this.modelsLoader = modelsLoader;
-        Log.d(TAG, "setModelsLoader: ");
-        return this;
-    }
-
     public RotatingGLView setProgressIndicator(@Nullable ProgressIndicator indicator) {
         this.progressIndicator = indicator;
         return this;
@@ -154,7 +146,7 @@ public class RotatingGLView extends GLSurfaceView {
         setEGLContextClientVersion(2);
         setEGLConfigChooser(8, 8, 8, 8, 16, 0);
         getHolder().setFormat(PixelFormat.TRANSLUCENT);
-        setZOrderOnTop(true);
+        //setZOrderOnTop(true);
         renderer = new MyRenderer(this);
         setRenderer(renderer);
     }
@@ -174,7 +166,6 @@ public class RotatingGLView extends GLSurfaceView {
                 }
                 world = new World();
                 world.setAmbientLight(20, 20, 20);
-                //if (modelsLoader != null) modelsLoader.loadTextures(TextureManager.getInstance());
                 worldAsyncEmitter.onNext(world);
                 worldAsyncEmitter.onCompleted();
             }
@@ -221,10 +212,14 @@ public class RotatingGLView extends GLSurfaceView {
         subscriptions.unsubscribe();
     }
 
-    public interface ModelsLoader {
-        void loadTextures(TextureManager textureManager);
-//        void swapModel(@NonNull Object3D replacement);
+    public void getOnGLReady(OnGLReadyCallback ref) {
+        this.onGlReadyCallback = ref;
     }
+
+    public interface OnGLReadyCallback {
+        void onGLViewReady();
+    }
+
 
     public interface ProgressIndicator {
         void showProgressBar();
@@ -267,7 +262,6 @@ public class RotatingGLView extends GLSurfaceView {
             Context ctx = weakHelper.getContext();
             final Resources res = ctx.getResources();
             rx.Subscription subscription =
-
                     BitmapUtils.loadTexturesAsync(weakHelper.getContext(), new String[]{weakHelper.texturePath})
                             .flatMap(new Func1<Boolean, Observable<World>>() {
                                 @Override
@@ -305,9 +299,12 @@ public class RotatingGLView extends GLSurfaceView {
                                         onError(new Throwable("Nullable model"));
                                         return;
                                     }
+                                    weakHelper.currentModel.translate(35, -25, 25);
                                     weakHelper.currentModel.rotateX(weakHelper.rotationX);
                                     weakHelper.currentModel.rotateY(weakHelper.rotationY);
                                     weakHelper.currentModel.rotateZ(weakHelper.rotationZ);
+                                    if (weakHelper.onGlReadyCallback != null)
+                                        weakHelper.onGlReadyCallback.onGLViewReady();
                                     if (weakHelper.progressIndicator != null)
                                         weakHelper.progressIndicator.hideProgressBar();
                                 }
