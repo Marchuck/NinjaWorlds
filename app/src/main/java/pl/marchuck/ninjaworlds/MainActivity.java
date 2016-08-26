@@ -28,6 +28,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @AfterViews
     void aacscs() {
+
+
         Log.d(TAG, "aacscs: ");
         SupportMapFragment su = new SupportMapFragment();
         su.getMapAsync(this);
@@ -44,7 +46,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        glView = new RotatingGLView(this);
+        RotatingGLView.Builder builder = new RotatingGLView.Builder();
+        builder.rotationY = 0.03f;
+        builder.objPath = "cat/cat.obj";
+        builder.mtlPath = "cat/cat.mtl";
+        builder.texturePath = "cat/cat_diff.png";
+        glView = builder.build(this);
+
+//        glView = new RotatingGLView(this);
         glView.getOnGLReady(this);
         rootView.addView(glView);
     }

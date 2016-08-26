@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId "pl.marchuck.ninjaworlds"
-        minSdkVersion 18
+        minSdkVersion 21
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
@@ -23,19 +23,23 @@ android {
         }
     }
 }
-
+def SUPPORT_LIBRARY_VERSION = "23.0.0"
+def GOOGLE_PLAY_VERSION = "9.0.0"
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
     compile 'io.reactivex:rxandroid:1.1.0'
     compile 'io.reactivex:rxjava:1.1.8'
-    compile 'com.android.support:appcompat-v7:23.0.0'
-    compile 'com.android.support:design:23.0.0'
-    compile 'com.google.android.gms:play-services-location:9.0.0'
+    compile "com.android.support:appcompat-v7:$SUPPORT_LIBRARY_VERSION"
+    compile "com.android.support:design:$SUPPORT_LIBRARY_VERSION"
+    compile "com.android.support:recyclerview-v7:$SUPPORT_LIBRARY_VERSION"
+
+    compile "com.google.android.gms:play-services-location:$GOOGLE_PLAY_VERSION"
     compile 'com.google.maps.android:android-maps-utils:0.3.4'
-    compile 'com.google.android.gms:play-services-maps:9.0.0'
+    compile "com.google.android.gms:play-services-maps:$GOOGLE_PLAY_VERSION"
     apt "org.androidannotations:androidannotations:$AAVersion"
     compile "org.androidannotations:androidannotations-api:$AAVersion"
+    compile 'org.jsoup:jsoup:1.9.1'
     compile files('libs/bones.jar')
     compile files('libs/jpct_ae.jar')
 }

@@ -1,5 +1,8 @@
 package pl.marchuck.ninjaworlds;
 
+import android.app.Dialog;
+import android.content.DialogInterface;
+import android.support.annotation.IdRes;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.View;
@@ -12,6 +15,9 @@ import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EFragment;
 import org.androidannotations.annotations.ViewById;
+
+import pl.marchuck.ninjaworlds.models.Place;
+import pl.marchuck.ninjaworlds.ui.SelectRouteDialog;
 
 /**
  * @author Lukasz Marczak
@@ -39,6 +45,8 @@ public class ButtonsFragment extends Fragment {
 
     @ViewById(R.id.swap)
     ImageView swapButton;
+
+
     private boolean clicksReady;
     private final Runnable buttonsActiveCallback = new Runnable() {
         @Override
@@ -46,12 +54,38 @@ public class ButtonsFragment extends Fragment {
             clicksReady = true;
         }
     };
+    private Place fromPlace, toPlace;
 
     @Click(R.id.from)
     void onFrom() {
         if (clicksReady) {
-
+//            Intent login = PopupActivity.getStartIntent(getActivity(), PopupActivity.MORPH_TYPE_FAB);
+//            ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation
+//                    (getActivity(), fromButton, "from_transition");
+//            getActivity().startActivity(login, options.toBundle());
+            showDialog(R.id.from);
         }
+    }
+
+    private void showDialog(@IdRes int callingRes) {
+
+        Place currentPlace = toPlace;
+        if (callingRes == R.id.from) {
+            currentPlace = fromPlace;
+        }
+        Dialog dialog = new SelectRouteDialog(getActivity(), true, new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                dialog.dismiss();
+            }
+        }).withSelectionListener(new SelectRouteDialog.SelectionListener() {
+            @Override
+            public void onRouteSelected(Place route) {
+
+            }
+        }).withCurrentRoute(currentPlace).build();
+
+        dialog.show();
     }
 
     @Click(R.id.to)

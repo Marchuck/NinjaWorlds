@@ -86,8 +86,7 @@ public class BitmapUtils {
                 int i = 0;
                 for (; i < tex.length && result; i++) {
                     Log.d(TAG, "loading " + tex[i]);
-                    result = loadNextTexture(ctx, tm, tex[i]);
-
+                    if (Is.nonEmpty(tex[i])) result = loadNextTexture(ctx, tm, tex[i]);
                 }
                 if (!result) {
                     //something wrong happened, one or more textures are broken

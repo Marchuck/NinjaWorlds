@@ -50,7 +50,10 @@ public class RotatingGLView extends GLSurfaceView {
     public static final String TAG = RotatingGLView.class.getSimpleName();
     public float speedX, speedY = 0.03f, speedZ;
     public float rotationX, rotationY, rotationZ;
-    public String objPath = "cat/cat.obj", texturePath = "cat/cat_diff.png", mtlPath = "cat/cat.mtl";
+    public String objPath = "cat/cat.obj";
+    @Nullable
+    public String texturePath = "cat/cat_diff.png";
+    public String mtlPath = "cat/cat.mtl";
     public float scale = 31f;
     private CompositeSubscription subscriptions = new CompositeSubscription();
     private AtomicBoolean nowIsSwitching = new AtomicBoolean(false);
@@ -64,6 +67,22 @@ public class RotatingGLView extends GLSurfaceView {
     @Nullable
     private ProgressIndicator progressIndicator;
     private OnGLReadyCallback onGlReadyCallback;
+
+    private RotatingGLView(Context c, Builder b) {
+        super(c);
+        texturePath = b.texturePath;
+        mtlPath = b.mtlPath;
+        objPath = b.objPath;
+        speedX = b.speedX;
+        speedY = b.speedY;
+        speedZ = b.speedZ;
+        rotationX = b.rotationX;
+        rotationY = b.rotationY;
+        rotationZ = b.rotationZ;
+        scale = b.scale;
+
+        init(c);
+    }
 
     public RotatingGLView(Context context) {
         super(context);
@@ -120,7 +139,8 @@ public class RotatingGLView extends GLSurfaceView {
                     outs = Loader.loadOBJ(assetManager.open(objPath),
                             assetManager.open(mtlPath), scale);
                     Log.i(TAG, "LOADED " + outs.length + " LAYERS " + texturePath);
-                    outs[0].setTexture(texturePath);
+                    if (Is.nonEmpty(texturePath))
+                        outs[0].setTexture(texturePath);
 
                     outs[0].build();
                     out = Object3D.mergeAll(outs);
@@ -142,6 +162,7 @@ public class RotatingGLView extends GLSurfaceView {
     }
 
     private void init(Context context) {
+        setPreserveEGLContextOnPause(true);
         isGL20 = isGLES2_0(context);
         setEGLContextClientVersion(2);
         setEGLConfigChooser(8, 8, 8, 8, 16, 0);
@@ -220,11 +241,25 @@ public class RotatingGLView extends GLSurfaceView {
         void onGLViewReady();
     }
 
-
     public interface ProgressIndicator {
         void showProgressBar();
 
         void hideProgressBar();
+    }
+
+    public static class Builder {
+
+        public float speedX, speedY = 0.03f, speedZ;
+        public float rotationX, rotationY, rotationZ;
+        public String objPath = "cat/cat.obj";
+
+        public String texturePath = "cat/cat_diff.png";
+        public String mtlPath = "cat/cat.mtl";
+        public float scale = 31f;
+
+        public RotatingGLView build(Context c) {
+            return new RotatingGLView(c, this);
+        }
     }
 
     private static class MyRenderer implements GLSurfaceView.Renderer {
@@ -244,7 +279,6 @@ public class RotatingGLView extends GLSurfaceView {
         @Override
         public void onSurfaceCreated(GL10 gl, EGLConfig eglConfig) {
             Log.d(TAG, "onSurfaceCreated: ");
-
             gl.glDisable(GL10.GL_DITHER);
             gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT,
                     GL10.GL_FASTEST);
@@ -263,23 +297,28 @@ public class RotatingGLView extends GLSurfaceView {
             final Resources res = ctx.getResources();
             rx.Subscription subscription =
                     BitmapUtils.loadTexturesAsync(weakHelper.getContext(), new String[]{weakHelper.texturePath})
-                            .flatMap(new Func1<Boolean, Observable<World>>() {
+                            .onErrorResumeNext(new Func1<Throwable, Observable<? extends Boolean>>() {
                                 @Override
-                                public Observable<World> call(Boolean aBoolean) {
-                                    return Observable.zip(weakHelper.initWorld(res),
-                                            weakHelper.loadModel(),
-                                            //load3dModel(weakHelper.getContext(), 20f, "cat", "cat/cat_diff.png"),
-                                            new Func2<World, Object3D, World>() {
-                                                @Override
-                                                public World call(World world, Object3D object3D) {
-                                                    // weakHelper.leftModel = object3D;
-                                                    weakHelper.currentModel = object3D;
-                                                    // weakHelper.rightModel = object3D;
-                                                    return weakHelper.addObjectToWorld(world, object3D);
-                                                }
-                                            });
+                                public Observable<? extends Boolean> call(Throwable throwable) {
+                                    return Observable.just(true);
                                 }
-                            }).subscribeOn(Schedulers.computation())
+                            }).flatMap(new Func1<Boolean, Observable<World>>() {
+                        @Override
+                        public Observable<World> call(Boolean aBoolean) {
+                            return Observable.zip(weakHelper.initWorld(res),
+                                    weakHelper.loadModel(),
+                                    //load3dModel(weakHelper.getContext(), 20f, "cat", "cat/cat_diff.png"),
+                                    new Func2<World, Object3D, World>() {
+                                        @Override
+                                        public World call(World world, Object3D object3D) {
+                                            // weakHelper.leftModel = object3D;
+                                            weakHelper.currentModel = object3D;
+                                            // weakHelper.rightModel = object3D;
+                                            return weakHelper.addObjectToWorld(world, object3D);
+                                        }
+                                    });
+                        }
+                    }).subscribeOn(Schedulers.computation())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(new Subscriber<World>() {
                                 @Override
