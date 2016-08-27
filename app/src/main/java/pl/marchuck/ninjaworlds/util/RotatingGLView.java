@@ -1,4 +1,4 @@
-package pl.marchuck.ninjaworlds;
+package pl.marchuck.ninjaworlds.util;
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import pl.marchuck.ninjaworlds.R;
 import rx.AsyncEmitter;
 import rx.Observable;
 import rx.Subscriber;
@@ -80,7 +81,6 @@ public class RotatingGLView extends GLSurfaceView {
         rotationY = b.rotationY;
         rotationZ = b.rotationZ;
         scale = b.scale;
-
         init(c);
     }
 

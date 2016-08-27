@@ -40,6 +40,10 @@ dependencies {
     apt "org.androidannotations:androidannotations:$AAVersion"
     compile "org.androidannotations:androidannotations-api:$AAVersion"
     compile 'org.jsoup:jsoup:1.9.1'
+
+    compile "com.github.VictorAlbertos.RxCache:runtime:1.6.2"
+
+    compile 'com.github.VictorAlbertos.Jolyglot:gson:0.0.3'
     compile files('libs/bones.jar')
     compile files('libs/jpct_ae.jar')
 }

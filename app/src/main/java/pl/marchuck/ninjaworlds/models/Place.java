@@ -5,5 +5,14 @@ package pl.marchuck.ninjaworlds.models;
  * @since 26.08.16.
  */
 public class Place {
-    public String route;
+    public String place;
+
+    public Place(String place) {
+        this.place = place;
+    }
+
+    @Override
+    public String toString() {
+        return place;
+    }
 }

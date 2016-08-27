@@ -9,6 +9,16 @@
     tools:visibility="visible">
 
     <ImageView
+        android:id="@+id/navigate"
+        android:layout_width="70sp"
+        android:layout_height="70sp"
+        android:layout_below="@+id/from"
+        android:layout_toStartOf="@+id/to"
+        android:background="@drawable/fake_fab_fourth"
+        android:src="@android:drawable/ic_menu_compass"
+        android:visibility="gone" />
+
+    <ImageView
         android:id="@+id/from"
         android:layout_width="140sp"
         android:layout_height="140sp"

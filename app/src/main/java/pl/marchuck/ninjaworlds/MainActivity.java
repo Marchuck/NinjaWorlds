@@ -13,13 +13,13 @@ import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ViewById;
 
+import pl.marchuck.ninjaworlds.route_buttons.ButtonsFragment_;
+import pl.marchuck.ninjaworlds.util.RotatingGLView;
+
 
 @EActivity(R.layout.activity_main)
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, RotatingGLView.OnGLReadyCallback {
     public static final String TAG = MainActivity.class.getSimpleName();
-
-//    @ViewById(R.id.rotatingGLView)
-//    RotatingGLView rotatingGLView;
 
     @ViewById(R.id.rootView)
     RelativeLayout rootView;
@@ -27,10 +27,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     RotatingGLView glView;
 
     @AfterViews
-    void aacscs() {
+    void initViews() {
 
-
-        Log.d(TAG, "aacscs: ");
+        Log.d(TAG, "initViews: ");
         SupportMapFragment su = new SupportMapFragment();
         su.getMapAsync(this);
         addFragment(su);
@@ -53,7 +52,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         builder.texturePath = "cat/cat_diff.png";
         glView = builder.build(this);
 
-//        glView = new RotatingGLView(this);
         glView.getOnGLReady(this);
         rootView.addView(glView);
     }

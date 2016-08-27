@@ -22,7 +22,7 @@ public class StopsAPI {
     ///przystanek.php
 
     //todo: transform to rxcache
-    public Observable<List<String>> provideStops() {
+    public static Observable<List<String>> provideStops() {
         return JsoupProxy.getJsoupDocument(StopsAPI.endpoint + "/przystanek.php")
                 .map(new Func1<Document, List<String>>() {
                     @Override

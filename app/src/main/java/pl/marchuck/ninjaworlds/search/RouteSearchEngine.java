@@ -3,6 +3,7 @@ package pl.marchuck.ninjaworlds.search;
 import java.util.ArrayList;
 import java.util.List;
 
+import pl.marchuck.ninjaworlds.experimantal.TextEmitter;
 import pl.marchuck.ninjaworlds.models.Place;
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
@@ -16,13 +17,18 @@ import rx.schedulers.Schedulers;
  */
 public class RouteSearchEngine extends SearchEngineBase {
 
-
+    private TextEmitter emitter;
     private Action1<List<Place>> newResultsCaller;
 
-    public RouteSearchEngine() {
+    public RouteSearchEngine(TextEmitter emitter) {
+        this.emitter = emitter;
+    }
+
+    @Override
+    public SearchEngine init() {
         switch (searchProviders.size()) {
             case 1: {
-                getInputEmitter().flatMap(new Func1<CharSequence, Observable<List<Place>>>() {
+                getInputEmitter(emitter).flatMap(new Func1<CharSequence, Observable<List<Place>>>() {
                     @Override
                     public Observable<List<Place>> call(CharSequence charSequence) {
                         return searchProviders.get(0).getSuggestions(charSequence);
@@ -50,8 +56,8 @@ public class RouteSearchEngine extends SearchEngineBase {
             case 4: {
                 break;
             }
-
         }
+        return this;
     }
 
     @Override

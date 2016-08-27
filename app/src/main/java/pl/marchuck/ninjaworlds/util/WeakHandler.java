@@ -1,4 +1,4 @@
-package pl.marchuck.ninjaworlds;
+package pl.marchuck.ninjaworlds.util;
 
 import android.os.Handler;
 import android.os.Looper;

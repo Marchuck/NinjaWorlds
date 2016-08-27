@@ -1,4 +1,4 @@
-package pl.marchuck.ninjaworlds;
+package pl.marchuck.ninjaworlds.util;
 
 import android.content.Context;
 import android.content.res.Resources;

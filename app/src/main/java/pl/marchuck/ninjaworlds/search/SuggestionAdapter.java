@@ -1,15 +1,17 @@
 package pl.marchuck.ninjaworlds.search;
 
+import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
 import android.widget.TextView;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import pl.marchuck.ninjaworlds.R;
+import pl.marchuck.ninjaworlds.experimantal.Call;
 import pl.marchuck.ninjaworlds.models.Place;
 
 /**
@@ -24,11 +26,11 @@ import pl.marchuck.ninjaworlds.models.Place;
  */
 public class SuggestionAdapter extends RecyclerView.Adapter<SuggestionAdapter.SuggestionAdapterViewHolder> {
 
-    List<Place> dataSet;
+    private List<Place> dataSet;
+    private Call<Place> caller;
 
-    public SuggestionAdapter(List<Place> dataSet) {
+    public SuggestionAdapter(@Nullable List<Place> dataSet) {
         this.dataSet = dataSet;
-        if (dataSet == null) dataSet = new ArrayList<>();
     }
 
     public void updateDataset(List<Place> places) {
@@ -43,20 +45,32 @@ public class SuggestionAdapter extends RecyclerView.Adapter<SuggestionAdapter.Su
     }
 
     @Override
-    public void onBindViewHolder(SuggestionAdapterViewHolder holder, int position) {
+    public void onBindViewHolder(final SuggestionAdapterViewHolder holder, int position) {
         final Place item = dataSet.get(position);
-        holder.textView.setText(item.route);
+        holder.textView.setText(item.place);
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //todo:
+                if (caller != null) caller.call(item);
+                holder.textView.setAlpha(0.5f);
+                holder.textView.animate()
+                        .alpha(1f)
+                        .setDuration(300)
+                        .setInterpolator(new AccelerateInterpolator())
+                        .start();
             }
         });
     }
 
     @Override
     public int getItemCount() {
-        return dataSet.size();
+        return dataSet == null ? 0 : dataSet.size();
+    }
+
+    public RecyclerView.Adapter withClickListener(Call<Place> listener) {
+        this.caller = listener;
+        return this;
     }
 
     public static class SuggestionAdapterViewHolder extends RecyclerView.ViewHolder {

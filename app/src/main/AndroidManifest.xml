@@ -39,10 +39,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".PopupActivity_"
-            android:theme="@style/Theme.Transparent" />
-
     </application>
 
 </manifest>

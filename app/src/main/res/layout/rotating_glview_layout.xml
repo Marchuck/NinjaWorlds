@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!--<pl.marchuck.ninjaworlds.RotatingGLView-->
+    <!--<pl.marchuck.ninjaworlds.util.RotatingGLView-->
     <!--android:id="@+id/rotatingGLView"-->
     <!--android:layout_width="match_parent"-->
     <!--android:layout_height="match_parent"-->
@@ -14,7 +14,7 @@
     <!--custom:scale="31"-->
     <!--custom:speedY="0.03"-->
     <!--custom:texturePath="cat/cat_diff.png" /> -->
-    <pl.marchuck.ninjaworlds.RotatingGLView
+    <pl.marchuck.ninjaworlds.util.RotatingGLView
         android:id="@+id/rotatingGLView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

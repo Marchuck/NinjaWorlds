@@ -13,20 +13,20 @@
         android:elevation="40dp"
         android:padding="16sp">
 
-        <EditText
+        <pl.marchuck.ninjaworlds.experimantal.SearchViewEmitter
             android:id="@+id/searchview"
             android:layout_width="230sp"
             android:layout_height="wrap_content" />
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/search_fab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_toRightOf="@+id/searchview"
-            android:onClick="dismiss"
-            android:src="@android:drawable/ic_media_play"
-            android:transitionName="from_transition" />
+        <!--<android.support.design.widget.FloatingActionButton-->
+        <!--android:id="@+id/search_fab"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="center_horizontal"-->
+        <!--android:layout_toRightOf="@+id/searchview"-->
+        <!--android:onClick="dismiss"-->
+        <!--android:src="@android:drawable/ic_media_play"-->
+        <!--android:transitionName="from_transition" />-->
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/recyclerview"
