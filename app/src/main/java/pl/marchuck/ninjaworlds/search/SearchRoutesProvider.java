@@ -32,7 +32,7 @@ public class SearchRoutesProvider implements SearchProvider {
         }).filter(new Func1<String, Boolean>() {
             @Override
             public Boolean call(String s) {
-                return s.toLowerCase().contains(sequence.toString().toLowerCase());
+                return s.toLowerCase().startsWith(sequence.toString().toLowerCase());
             }
         }).map(new Func1<String, Place>() {
             @Override

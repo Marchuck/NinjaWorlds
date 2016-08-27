@@ -32,7 +32,12 @@ public class ButtonsPresenter implements ButtonsCallbacks {
         callbacks.showNavigateButton();
     }
 
-    public void showDialog(final TextView toText, @ButtonsFragment.Destination final int destination) {
+    @Override
+    public void setDestinationText(Place place, @Destination int destination) {
+        callbacks.setDestinationText(place, destination);
+    }
+
+    public void showDialog(final TextView toText, @Destination final int destination) {
         Dialog dialog = new SelectRouteDialog(getActivity(), true,
                 new DialogInterface.OnCancelListener() {
                     @Override
@@ -42,13 +47,13 @@ public class ButtonsPresenter implements ButtonsCallbacks {
                 }).withSelectionListener(new SelectRouteDialog.SelectionListener() {
             @Override
             public void onRouteSelected(Place route) {
-                toText.setText(route.toString());
-                if (destination == ButtonsFragment.FROM) {
+                if (destination == Destination.FROM) {
                     isFromChosen = true;
                 }
-                if (destination == ButtonsFragment.TO) {
+                if (destination == Destination.TO) {
                     isToChosen = true;
                 }
+                setDestinationText(route, destination);
                 if (chosenBoth()) {
                     showNavigateButton();
                 }

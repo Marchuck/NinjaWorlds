@@ -19,9 +19,15 @@ public class RouteSearchEngine extends SearchEngineBase {
 
     private TextEmitter emitter;
     private Action1<List<Place>> newResultsCaller;
+    private AdditionalListener listener;
 
     public RouteSearchEngine(TextEmitter emitter) {
         this.emitter = emitter;
+    }
+
+    public RouteSearchEngine optionalListner(AdditionalListener listener) {
+        this.listener = listener;
+        return this;
     }
 
     @Override
@@ -31,6 +37,7 @@ public class RouteSearchEngine extends SearchEngineBase {
                 getInputEmitter(emitter).flatMap(new Func1<CharSequence, Observable<List<Place>>>() {
                     @Override
                     public Observable<List<Place>> call(CharSequence charSequence) {
+                        listener.onListen(RouteSearchEngine.this);
                         return searchProviders.get(0).getSuggestions(charSequence);
                     }
                 }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
@@ -63,5 +70,9 @@ public class RouteSearchEngine extends SearchEngineBase {
     @Override
     public void onSuggestedAction(Action1<List<Place>> items) {
         this.newResultsCaller = items;
+    }
+
+    public interface AdditionalListener {
+        void onListen(SearchEngine engine);
     }
 }

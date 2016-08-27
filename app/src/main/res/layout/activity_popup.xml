@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent">
+    android:background="@color/colorPrimary">
 
     <RelativeLayout
         android:id="@+id/container"
@@ -11,12 +12,20 @@
         android:layout_gravity="center"
         android:background="@android:color/white"
         android:elevation="40dp"
-        android:padding="16sp">
+        android:padding="8sp">
+
+        <TextView
+            android:id="@+id/title"
+            style="@style/default_textview"
+            android:layout_centerHorizontal="true"
+            android:textSize="22sp"
+            tools:text="TITLE" />
 
         <pl.marchuck.ninjaworlds.experimantal.SearchViewEmitter
             android:id="@+id/searchview"
             android:layout_width="230sp"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/title" />
 
         <!--<android.support.design.widget.FloatingActionButton-->
         <!--android:id="@+id/search_fab"-->

@@ -8,6 +8,24 @@
     android:visibility="invisible"
     tools:visibility="visible">
 
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:orientation="vertical"
+        android:padding="10sp">
+
+        <TextView
+            android:id="@+id/fromDestination"
+            style="@style/default_textview"
+            tools:text="Miechowity" />
+
+        <TextView
+            android:id="@+id/toDestination"
+            style="@style/default_textview"
+            tools:text="Miechowity" />
+    </LinearLayout>
+
     <ImageView
         android:id="@+id/navigate"
         android:layout_width="70sp"
@@ -53,26 +71,19 @@
 
     <TextView
         android:id="@+id/fromText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        style="@style/default_textview"
         android:layout_alignEnd="@+id/swap"
         android:layout_centerVertical="true"
         android:layout_marginEnd="90dp"
-        android:text="FROM"
-        android:textColor="@android:color/black"
-        android:textSize="30sp" />
+        android:text="FROM" />
 
     <TextView
-
         android:id="@+id/toText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        style="@style/default_textview"
         android:layout_alignEnd="@+id/swap"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
         android:layout_marginBottom="137dp"
         android:layout_marginEnd="123dp"
-        android:text="TO"
-        android:textColor="@android:color/black"
-        android:textSize="30sp" />
+        android:text="TO" />
 </RelativeLayout>

@@ -1,124 +1,192 @@
 package pl.marchuck.ninjaworlds.route_buttons;
 
-import android.support.annotation.IntDef;
+import android.content.Context;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.widget.ImageView;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.Interpolator;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EFragment;
 import org.androidannotations.annotations.ViewById;
 
+import java.util.List;
+
 import pl.marchuck.ninjaworlds.R;
+import pl.marchuck.ninjaworlds.experimantal.Call;
+import pl.marchuck.ninjaworlds.experimantal.SearchViewEmitter;
+import pl.marchuck.ninjaworlds.models.Place;
+import pl.marchuck.ninjaworlds.search.RouteSearchEngine;
+import pl.marchuck.ninjaworlds.search.SearchEngine;
+import pl.marchuck.ninjaworlds.search.SearchPresenter;
+import pl.marchuck.ninjaworlds.search.SearchProvider;
+import pl.marchuck.ninjaworlds.search.SearchRoutesProvider;
+import pl.marchuck.ninjaworlds.search.SuggestionAdapter;
 import pl.marchuck.ninjaworlds.util.WeakHandler;
+import rx.functions.Action1;
 
 /**
  * @author Lukasz Marczak
  * @since 17.08.16.
  */
-@EFragment(R.layout.buttons_layout)
-public class ButtonsFragment extends Fragment implements ButtonsCallbacks {
+@EFragment(R.layout.searchviews_layout)
+public class ButtonsFragment extends Fragment implements ButtonsCallbacks, Call<Place>, RouteSearchEngine.AdditionalListener {
 
     public static final String TAG = ButtonsFragment.class.getSimpleName();
-    public static final int FROM = 0;
-    public static final int TO = 1;
-    @ViewById(R.id.navigate)
-    ImageView navigateButton;
-    @ViewById(R.id.from)
-    ImageView fromButton;
-    @ViewById(R.id.to)
-    ImageView toButton;
-    @ViewById(R.id.fromText)
-    TextView fromText;
-    @ViewById(R.id.toText)
-    TextView toText;
+
     @ViewById(R.id.rootView)
     RelativeLayout rootView;
-    @ViewById(R.id.swap)
-    ImageView swapButton;
-    private ButtonsPresenter buttonsPresenter;
+
+    @ViewById(R.id.search)
+    FloatingActionButton searchFab;
+
+    @ViewById(R.id.from)
+    SearchViewEmitter searchFrom;
+
+    @ViewById(R.id.to)
+    SearchViewEmitter searchTo;
+
+    @ViewById(R.id.recyclerview)
+    RecyclerView recyclerView;
+    SearchEngine searchFromEngine, searchToEngine;
+    SearchViewEmitter currentEmitterInUse;
+    private SearchPresenter searchPresenter;
     private boolean clicksReady;
     private final Runnable buttonsActiveCallback = new Runnable() {
         @Override
         public void run() {
             clicksReady = true;
+            if (searchFrom != null) searchFrom.requestFocus();
         }
     };
+    private RecyclerView.Adapter adapter;
 
     @Click(R.id.from)
-    void onFrom() {
-        if (clicksReady) {
-
-            buttonsPresenter.showDialog(fromText, FROM);
-        }
+    void onClickFrom() {
+        Log.d(TAG, "onClickFrom: ");
+        currentEmitterInUse = searchFrom;
     }
 
     @Click(R.id.to)
-    void onTo() {
-        if (clicksReady) {
-            buttonsPresenter.showDialog(toText, TO);
-        }
+    void onClickTo() {
+        Log.d(TAG, "onClickTo: ");
+        currentEmitterInUse = searchTo;
     }
 
-    @Click(R.id.swap)
-    void onSwap() {
-        if (clicksReady) {
-            Toast.makeText(ButtonsFragment.this.getActivity(), "Not yet implemented", Toast.LENGTH_SHORT).show();
-        }
+    private Interpolator interpolator() {
+        return new AccelerateInterpolator();
     }
 
     @AfterViews
-    public void initView() {
-        Log.d(TAG, "initView: ");
-        fromText.setTag("Select source");
-        toText.setTag("Select destination");
-        fromButton.setScaleY(0f);
-        fromButton.setScaleX(0f);
+    public void init() {
+        searchFab.setScaleY(0f);
+        searchFab.setScaleX(0f);
 
-        toButton.setScaleY(0f);
-        toButton.setScaleX(0f);
+        searchFrom.setScaleY(0f);
+        searchFrom.setScaleX(0f);
 
-        swapButton.setScaleY(0f);
-        swapButton.setScaleX(0f);
+        searchTo.setScaleY(0f);
+        searchTo.setScaleX(0f);
 
         rootView.setVisibility(View.VISIBLE);
 
-        fromButton.animate().scaleX(1).scaleY(1)
-                .setDuration(400).setInterpolator(new AccelerateDecelerateInterpolator())
-                .start();
-
-        toButton.animate().scaleX(1).scaleY(1)
-                .setDuration(400).setInterpolator(new AccelerateDecelerateInterpolator())
-                .setStartDelay(100)
-                .start();
-
-        swapButton.animate().scaleX(1).scaleY(1)
-                .setDuration(300).setInterpolator(new AccelerateDecelerateInterpolator())
+        searchFrom.animate().scaleX(1).scaleY(1)
+                .setDuration(400).setInterpolator(interpolator())
                 .setStartDelay(200)
                 .start();
+
+        searchTo.animate().scaleX(1).scaleY(1)
+                .setDuration(400).setInterpolator(interpolator())
+                .setStartDelay(400)
+                .start();
+
+        searchFab.animate().scaleX(1).scaleY(1)
+                .setDuration(300).setInterpolator(interpolator())
+                .setStartDelay(600)
+                .start();
+
         WeakHandler weakHandler = new WeakHandler();
         weakHandler.postDelayed(buttonsActiveCallback, 500);
-        buttonsPresenter = new ButtonsPresenter(this);
+
+        Context ctx = getActivity().getApplicationContext();
+
+        adapter = new SuggestionAdapter().withClickListener(this);
+
+
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+
+        SearchProvider searchProvider = new SearchRoutesProvider(ctx);
+        searchFromEngine = new RouteSearchEngine(searchFrom)
+                .optionalListner(this)
+                .addSearchProvider(searchProvider).init();
+        searchToEngine = new RouteSearchEngine(searchTo)
+                .optionalListner(this)
+                .addSearchProvider(searchProvider).init();
+
+        searchFromEngine.onSuggestedAction(new Action1<List<Place>>() {
+            @Override
+            public void call(List<Place> places) {
+                if (!newResultIsTheSameAsCurrentInput(searchFrom, places))
+                    refreshRecyclerView(places);
+            }
+        });
+
+        searchToEngine.onSuggestedAction(new Action1<List<Place>>() {
+            @Override
+            public void call(List<Place> places) {
+                if (!newResultIsTheSameAsCurrentInput(searchTo, places))
+                    refreshRecyclerView(places);
+            }
+        });
+    }
+
+    private boolean newResultIsTheSameAsCurrentInput(SearchViewEmitter searchTo, List<Place> places) {
+        if (places.size() != 1) return false;
+        String textInSearchView = searchTo.getQuery().toString().toLowerCase();
+        String textInSuggestion = places.get(0).place.toLowerCase();
+        return textInSearchView.equals(textInSuggestion);
+    }
+
+    private void refreshRecyclerView(List<Place> places) {
+        recyclerView.setVisibility(View.VISIBLE);
+        recyclerView.setAlpha(.5f);
+        ((SuggestionAdapter) adapter).updateDataset(places);
+        recyclerView.animate().alpha(1).setDuration(200).setInterpolator(interpolator()).start();
+    }
+
+    public void initView() {
+        WeakHandler weakHandler = new WeakHandler();
+        weakHandler.postDelayed(buttonsActiveCallback, 500);
     }
 
     @Override
     public void showNavigateButton() {
-        navigateButton.setScaleY(0f);
-        navigateButton.setScaleX(0f);
-        navigateButton.setVisibility(View.VISIBLE);
-        navigateButton.animate().scaleX(1).scaleY(1)
-                .setDuration(400).setInterpolator(new AccelerateDecelerateInterpolator())
-                .start();
+
     }
 
-    @IntDef({FROM, TO})
-    public @interface Destination {
+    @Override
+    public void setDestinationText(Place place, @Destination int destination) {
 
+    }
+
+    @Override
+    public void call(Place place) {
+        currentEmitterInUse.setQuery(place.place, false);
+        recyclerView.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void onListen(SearchEngine engine) {
+        Log.d(TAG, "onListen: ");
+        if (engine == searchFromEngine) {
+            currentEmitterInUse = searchFrom;
+        } else currentEmitterInUse = searchTo;
     }
 }

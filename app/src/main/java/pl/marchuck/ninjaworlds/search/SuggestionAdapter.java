@@ -33,6 +33,9 @@ public class SuggestionAdapter extends RecyclerView.Adapter<SuggestionAdapter.Su
         this.dataSet = dataSet;
     }
 
+    public SuggestionAdapter() {
+    }
+
     public void updateDataset(List<Place> places) {
         this.dataSet = places;
         notifyDataSetChanged();

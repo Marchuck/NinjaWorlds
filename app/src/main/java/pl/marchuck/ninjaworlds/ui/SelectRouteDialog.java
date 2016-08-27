@@ -5,6 +5,8 @@ import android.content.Context;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.widget.TextView;
 
 import java.util.List;
 
@@ -23,11 +25,12 @@ import rx.functions.Action1;
  * @since 26.08.16.
  */
 public class SelectRouteDialog extends Dialog {
-
+    public static final String TAG = SelectRouteDialog.class.getSimpleName();
     @Nullable
     private SelectionListener selectionListener;
     private RecyclerView.Adapter adapter;
     private SearchEngine searchEngine;
+    private String title = "";
 
     public SelectRouteDialog(Context context) {
         super(context);
@@ -39,6 +42,7 @@ public class SelectRouteDialog extends Dialog {
 
     public SelectRouteDialog(Context context, boolean cancelable, OnCancelListener cancelListener) {
         super(context, cancelable, cancelListener);
+        setTitle("XDXDXD");
     }
 
     public SelectRouteDialog withSelectionListener(@Nullable SelectionListener listener) {
@@ -47,7 +51,8 @@ public class SelectRouteDialog extends Dialog {
     }
 
     public SelectRouteDialog withTitle(String s) {
-        setTitle(s);
+        Log.d(TAG, "withTitle: " + s);
+        this.title = s;
         return this;
     }
 
@@ -55,7 +60,8 @@ public class SelectRouteDialog extends Dialog {
         setContentView(R.layout.activity_popup);
         SearchViewEmitter somethingWhichTextChanges = (SearchViewEmitter) findViewById(R.id.searchview);
         //may be changed to edittext?
-
+        TextView titleView = (TextView) findViewById(R.id.title);
+        titleView.setText(title);
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
         adapter = new SuggestionAdapter(null).withClickListener(new Call<Place>() {
             @Override
@@ -69,7 +75,6 @@ public class SelectRouteDialog extends Dialog {
         searchEngine = new RouteSearchEngine(somethingWhichTextChanges)
                 .addSearchProvider(new SearchRoutesProvider(getContext()))
                 .init();
-
         searchEngine.onSuggestedAction(new Action1<List<Place>>() {
             @Override
             public void call(List<Place> places) {

@@ -45,15 +45,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        RotatingGLView.Builder builder = new RotatingGLView.Builder();
-        builder.rotationY = 0.03f;
-        builder.objPath = "cat/cat.obj";
-        builder.mtlPath = "cat/cat.mtl";
-        builder.texturePath = "cat/cat_diff.png";
-        glView = builder.build(this);
+//        RotatingGLView.Builder builder = new RotatingGLView.Builder();
+//        builder.rotationY = 0.03f;
+//        builder.objPath = "cat/cat.obj";
+//        builder.mtlPath = "cat/cat.mtl";
+//        builder.texturePath = "cat/cat_diff.png";
+//        glView = builder.build(this);
+//
+//        glView.getOnGLReady(this);
+//        rootView.addView(glView);
+        addFragment(new ButtonsFragment_());
 
-        glView.getOnGLReady(this);
-        rootView.addView(glView);
     }
 
     @Override
