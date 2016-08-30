@@ -5,7 +5,6 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.widget.TextView;
 
-import pl.marchuck.ninjaworlds.models.Place;
 import pl.marchuck.ninjaworlds.ui.SelectRouteDialog;
 
 /**
@@ -33,7 +32,7 @@ public class ButtonsPresenter implements ButtonsCallbacks {
     }
 
     @Override
-    public void setDestinationText(Place place, @Destination int destination) {
+    public void setDestinationText(CharSequence place, @Destination int destination) {
         callbacks.setDestinationText(place, destination);
     }
 
@@ -46,7 +45,7 @@ public class ButtonsPresenter implements ButtonsCallbacks {
                     }
                 }).withSelectionListener(new SelectRouteDialog.SelectionListener() {
             @Override
-            public void onRouteSelected(Place route) {
+            public void onRouteSelected(CharSequence route) {
                 if (destination == Destination.FROM) {
                     isFromChosen = true;
                 }

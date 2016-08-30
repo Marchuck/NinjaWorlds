@@ -3,7 +3,6 @@ package pl.marchuck.ninjaworlds.search;
 import java.util.List;
 
 import pl.marchuck.ninjaworlds.experimantal.TextEmitter;
-import pl.marchuck.ninjaworlds.models.Place;
 import rx.Observable;
 import rx.functions.Action1;
 
@@ -16,7 +15,7 @@ public interface SearchEngine {
 
     SearchEngine addSearchProvider(SearchProvider engine);
 
-    void onSuggestedAction(Action1<List<Place>> items);
+    void onSuggestedAction(Action1<List<CharSequence>> items);
 
     SearchEngine init();
 }

@@ -21,6 +21,12 @@
         android:layout_below="@+id/from"
         android:background="@android:color/white" />
 
+    <pl.marchuck.ninjaworlds.ui.WeatherView
+        android:id="@+id/snowView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/to" />
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerview"
         android:layout_width="match_parent"

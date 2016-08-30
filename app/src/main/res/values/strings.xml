@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">RotatingGLView</string>
     <!--<string name="google_api_key">AIzaSyCYegE31JiGonWZc6VQP5s_4ibk905GJI4</string>-->
+    <string name="weather_app_key">9827159fd98029f8eac17455fc826ecf</string>
 </resources>

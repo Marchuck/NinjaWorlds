@@ -5,8 +5,7 @@ import android.content.Context;
 import java.util.List;
 
 import pl.marchuck.ninjaworlds.App;
-import pl.marchuck.ninjaworlds.models.Place;
-import pl.marchuck.ninjaworlds.stops_api.DataRepository;
+import pl.marchuck.ninjaworlds.apis.DataRepository;
 import rx.Observable;
 import rx.functions.Func1;
 
@@ -23,7 +22,7 @@ public class SearchRoutesProvider implements SearchProvider {
     }
 
     @Override
-    public Observable<List<Place>> getSuggestions(final CharSequence sequence) {
+    public Observable<List<CharSequence>> getSuggestions(final CharSequence sequence) {
         return repository.getStops().flatMap(new Func1<List<String>, Observable<String>>() {
             @Override
             public Observable<String> call(List<String> strings) {
@@ -34,10 +33,10 @@ public class SearchRoutesProvider implements SearchProvider {
             public Boolean call(String s) {
                 return s.toLowerCase().startsWith(sequence.toString().toLowerCase());
             }
-        }).map(new Func1<String, Place>() {
+        }).map(new Func1<String, CharSequence>() {
             @Override
-            public Place call(String s) {
-                return new Place(s);
+            public CharSequence call(String s) {
+                return s;
             }
         }).toList();
     }

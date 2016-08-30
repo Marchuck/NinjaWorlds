@@ -1,4 +1,4 @@
-package pl.marchuck.ninjaworlds.stops_api;
+package pl.marchuck.ninjaworlds.apis;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -17,13 +17,11 @@ import rx.functions.Func1;
  */
 public class StopsAPI {
 
-    public static final String endpoint = "http://rozklady.mpk.krakow.pl";
-
-    ///przystanek.php
+    public final String endpoint = "http://rozklady.mpk.krakow.pl";
 
     //todo: transform to rxcache
-    public static Observable<List<String>> provideStops() {
-        return JsoupProxy.getJsoupDocument(StopsAPI.endpoint + "/przystanek.php")
+    public Observable<List<String>> provideStops() {
+        return JsoupProxy.getJsoupDocument(endpoint + "/przystanek.php")
                 .map(new Func1<Document, List<String>>() {
                     @Override
                     public List<String> call(Document document) {

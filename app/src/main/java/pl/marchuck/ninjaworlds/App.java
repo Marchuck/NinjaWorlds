@@ -3,7 +3,7 @@ package pl.marchuck.ninjaworlds;
 import android.app.Application;
 import android.content.Context;
 
-import pl.marchuck.ninjaworlds.stops_api.DataRepository;
+import pl.marchuck.ninjaworlds.apis.DataRepository;
 
 /**
  * @author Lukasz Marczak
@@ -26,6 +26,6 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        dataRepository = new DataRepository(getCacheDir());
+        dataRepository = new DataRepository(getApplicationContext());
     }
 }

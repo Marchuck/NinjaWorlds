@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId "pl.marchuck.ninjaworlds"
-        minSdkVersion 21
+        minSdkVersion 18
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
@@ -25,11 +25,19 @@ android {
 }
 def SUPPORT_LIBRARY_VERSION = "23.0.0"
 def GOOGLE_PLAY_VERSION = "9.0.0"
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
     compile 'io.reactivex:rxandroid:1.1.0'
     compile 'io.reactivex:rxjava:1.1.8'
+
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
+
+    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
+    //provide observable stuff
+    compile 'com.squareup.retrofit2:adapter-rxjava:2.1.0'
+
     compile "com.android.support:appcompat-v7:$SUPPORT_LIBRARY_VERSION"
     compile "com.android.support:design:$SUPPORT_LIBRARY_VERSION"
     compile "com.android.support:recyclerview-v7:$SUPPORT_LIBRARY_VERSION"

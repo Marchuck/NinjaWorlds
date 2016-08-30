@@ -29,7 +29,11 @@
         android:theme="@style/AppTheme">
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBXlNVHcbloyhOP1i6nK6xWOaiDP-2q-9w" />
+            android:value="AIzaSyAi4q_Y_1h6IJSsnyacgkhEGSvI9LFfPVo" />
+
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
 
         <activity android:name=".MainActivity_">
             <intent-filter>

@@ -13,7 +13,6 @@ import java.util.List;
 import pl.marchuck.ninjaworlds.R;
 import pl.marchuck.ninjaworlds.experimantal.Call;
 import pl.marchuck.ninjaworlds.experimantal.SearchViewEmitter;
-import pl.marchuck.ninjaworlds.models.Place;
 import pl.marchuck.ninjaworlds.search.RouteSearchEngine;
 import pl.marchuck.ninjaworlds.search.SearchEngine;
 import pl.marchuck.ninjaworlds.search.SearchRoutesProvider;
@@ -63,9 +62,9 @@ public class SelectRouteDialog extends Dialog {
         TextView titleView = (TextView) findViewById(R.id.title);
         titleView.setText(title);
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
-        adapter = new SuggestionAdapter(null).withClickListener(new Call<Place>() {
+        adapter = new SuggestionAdapter(null).withClickListener(new Call<CharSequence>() {
             @Override
-            public void call(Place place) {
+            public void call(CharSequence place) {
                 if (selectionListener != null) selectionListener.onRouteSelected(place);
                 dismiss();
             }
@@ -75,9 +74,9 @@ public class SelectRouteDialog extends Dialog {
         searchEngine = new RouteSearchEngine(somethingWhichTextChanges)
                 .addSearchProvider(new SearchRoutesProvider(getContext()))
                 .init();
-        searchEngine.onSuggestedAction(new Action1<List<Place>>() {
+        searchEngine.onSuggestedAction(new Action1<List<CharSequence>>() {
             @Override
-            public void call(List<Place> places) {
+            public void call(List<CharSequence> places) {
                 ((SuggestionAdapter) adapter).updateDataset(places);
                 adapter.notifyDataSetChanged();
             }
@@ -86,6 +85,6 @@ public class SelectRouteDialog extends Dialog {
     }
 
     public interface SelectionListener {
-        void onRouteSelected(Place place);
+        void onRouteSelected(CharSequence place);
     }
 }

@@ -12,7 +12,6 @@ import java.util.List;
 
 import pl.marchuck.ninjaworlds.R;
 import pl.marchuck.ninjaworlds.experimantal.Call;
-import pl.marchuck.ninjaworlds.models.Place;
 
 /**
  * @author Lukasz Marczak
@@ -26,17 +25,17 @@ import pl.marchuck.ninjaworlds.models.Place;
  */
 public class SuggestionAdapter extends RecyclerView.Adapter<SuggestionAdapter.SuggestionAdapterViewHolder> {
 
-    private List<Place> dataSet;
-    private Call<Place> caller;
+    private List<CharSequence> dataSet;
+    private Call<CharSequence> caller;
 
-    public SuggestionAdapter(@Nullable List<Place> dataSet) {
+    public SuggestionAdapter(@Nullable List<CharSequence> dataSet) {
         this.dataSet = dataSet;
     }
 
     public SuggestionAdapter() {
     }
 
-    public void updateDataset(List<Place> places) {
+    public void updateDataset(List<CharSequence> places) {
         this.dataSet = places;
         notifyDataSetChanged();
     }
@@ -49,8 +48,8 @@ public class SuggestionAdapter extends RecyclerView.Adapter<SuggestionAdapter.Su
 
     @Override
     public void onBindViewHolder(final SuggestionAdapterViewHolder holder, int position) {
-        final Place item = dataSet.get(position);
-        holder.textView.setText(item.place);
+        final CharSequence item = dataSet.get(position);
+        holder.textView.setText(item.toString());
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -71,7 +70,7 @@ public class SuggestionAdapter extends RecyclerView.Adapter<SuggestionAdapter.Su
         return dataSet == null ? 0 : dataSet.size();
     }
 
-    public RecyclerView.Adapter withClickListener(Call<Place> listener) {
+    public RecyclerView.Adapter withClickListener(Call<CharSequence> listener) {
         this.caller = listener;
         return this;
     }
