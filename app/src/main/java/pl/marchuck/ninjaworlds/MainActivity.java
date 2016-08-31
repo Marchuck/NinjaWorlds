@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     RelativeLayout rootView;
 
     RotatingGLView glView;
+    private boolean glReady;
 
     @AfterViews
     void aacscs() {
@@ -39,7 +40,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         getSupportFragmentManager()
                 .beginTransaction()
                 .add(R.id.rootView, fragment)
-                .commitAllowingStateLoss();
+                .commit();
     }
 
     @Override
@@ -51,6 +52,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onGLViewReady() {
+        glReady = true;
         addFragment(new ButtonsFragment_());
+    }
+
+    @Override
+    public void onPause() {
+        if (glView != null && glReady) glView.onPause();
+        super.onPause();
+
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (glView != null && glReady) glView.onResume();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        Log.d(TAG, "onDestroy: ");
+        glView.onDestroy();
+        super.onDestroy();
     }
 }

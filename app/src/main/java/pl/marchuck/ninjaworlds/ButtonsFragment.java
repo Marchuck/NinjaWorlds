@@ -101,4 +101,5 @@ public class ButtonsFragment extends Fragment {
         weakHandler.postDelayed(buttonsActiveCallback, 500);
     }
 
+
 }

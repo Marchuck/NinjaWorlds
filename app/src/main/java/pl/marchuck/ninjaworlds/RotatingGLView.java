@@ -199,14 +199,8 @@ public class RotatingGLView extends GLSurfaceView {
         return world;
     }
 
-    @Override
-    protected void onDetachedFromWindow() {
-        Log.d(TAG, "onDetachedFromWindow: ");
-        onDestroy();
-        super.onDetachedFromWindow();
-    }
 
-    private void onDestroy() {
+    public void onDestroy() {
         //avoid leaks!
         MemoryHelper.compact();
         subscriptions.unsubscribe();
